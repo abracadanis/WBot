@@ -25,9 +25,13 @@ public class WTradeBot extends TelegramLongPollingBot {
     private static final String START = "/start";
     private static final String STOP = "/stop";
     private static final String PARSE = "/parse";
-    private static final String COOKIES = "/cookies";
+    private static final String CHANGE_MIN_TS = "/mints";
+    private static final String CHANGE_MIN_ST = "/minst";
+
 
     private Boolean isStarted = false;
+    private Boolean isChangingMinSt = false;
+    private Boolean isChangingMinTs = false;
 
     @Autowired
     private WTradeServiceImpl service;
@@ -69,14 +73,31 @@ public class WTradeBot extends TelegramLongPollingBot {
                     }
                 }
             }
-            case COOKIES -> {
-                sendMessage(chatId, "Давай кукисы");
-                if(update.hasMessage()) {
-                    service.setCookies(update.getMessage().getText());
-                }
-            }
             case STOP -> {
                 isStarted = false;
+            }
+            case CHANGE_MIN_ST -> {
+                if(isStarted) {
+                    sendMessage(chatId, "Сначала останови бота (/stop)");
+                }
+                isChangingMinSt = true;
+                isChangingMinTs = false;
+            }
+            case CHANGE_MIN_TS -> {
+                if(isStarted) {
+                    sendMessage(chatId, "Сначала останови бота (/stop)");
+                }
+                isChangingMinTs = true;
+                isChangingMinSt = false;
+            }
+            default -> {
+                if(isChangingMinTs) {
+                    service.setMinTs(update.getMessage().getText());
+                } else if (isChangingMinSt) {
+                    service.setMinSt(update.getMessage().getText());
+                }
+                isChangingMinSt = false;
+                isChangingMinTs = false;
             }
         }
     }
@@ -102,7 +123,10 @@ public class WTradeBot extends TelegramLongPollingBot {
                Заодно посмотрим, как быстро у тебя башка после плотной хапочки прояснится. А по твоей теме постараюсь разузнать.
                Хрен его знает, на кой ляд тебе этот парсинг сдался, но я в чужие дела не лезу, хочешь спарсить, значит есть за чем...
                
-               Только для начала кукисы скинь, с помощью команды /cookies
+               Запуск - /parse
+               Остановка - /stop
+               Изменения минимума (Tradeit -> SkinSwap) - /mints
+               Изменения минимума (SkinSwap -> Tradeit) - /minst
                """;
         var formattedText = String.format(text, username);
         sendMessage(chatId, formattedText);

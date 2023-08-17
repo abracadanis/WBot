@@ -31,25 +31,33 @@ public class WTradeServiceImpl implements WTradeService {
 
             "steamid=76561198135087873";
 
-    String bodyTS = "{\"filter\":{\"appId\":252490,\"order\":0,\"minSales\":0,\"service1\":6,\"service2\":22,\"countMin1\":1," +
+    String bodyTS = """
+            {\"filter\":{\"appId\":252490,\"order\":0,\"minSales\":0,\"service1\":6,\"service2\":22,\"countMin1\":1," +
             "\"countMin2\":0,\"direction\":0,\"priceMax1\":0,\"priceMax2\":0,\"priceMin1\":0,\"priceMin2\":0,\"profitMax\":0," +
-            "\"profitMin\":-12,\"priceType1\":0,\"priceType2\":0,\"salesPeriod\":0,\"salesService\":0,\"searchName\":\"\"," +
+            "\"profitMin\":%s,\"priceType1\":0,\"priceType2\":0,\"salesPeriod\":0,\"salesService\":0,\"searchName\":\"\"," +
             "\"types\":{\"1\":1,\"2\":0,\"39\":0,\"40\":0,\"41\":0,\"42\":0}},\"fee1\":{\"fee\":10,\"bonus\":3}," +
-            "\"fee2\":{\"fee\":9.91,\"bonus\":0},\"currency\":\"USD\"}";
+            "\"fee2\":{\"fee\":9.91,\"bonus\":0},\"currency\":\"USD\"}
+            """;
 
-    String bodyST = "{\"filter\":{\"appId\":252490,\"order\":0,\"minSales\":0,\"service1\":22,\"service2\":6,\"countMin1\":1," +
+    String bodyST = """
+            {\"filter\":{\"appId\":252490,\"order\":0,\"minSales\":0,\"service1\":22,\"service2\":6,\"countMin1\":1," +
             "\"countMin2\":0,\"direction\":0,\"priceMax1\":0,\"priceMax2\":0,\"priceMin1\":0,\"priceMin2\":0,\"profitMax\":0," +
-            "\"profitMin\":23,\"priceType1\":0,\"priceType2\":0,\"salesPeriod\":0,\"salesService\":0,\"searchName\":\"\"," +
+            "\"profitMin\":%s,\"priceType1\":0,\"priceType2\":0,\"salesPeriod\":0,\"salesService\":0,\"searchName\":\"\"," +
             "\"types\":{\"1\":1,\"2\":0,\"39\":0,\"40\":0,\"41\":0,\"42\":0}},\"fee1\":{\"fee\":10,\"bonus\":3}," +
-            "\"fee2\":{\"fee\":9.91,\"bonus\":0},\"currency\":\"USD\"}";
+            "\"fee2\":{\"fee\":9.91,\"bonus\":0},\"currency\":\"USD\"}
+            """;
 
     Set<Long> ids = new HashSet<>();
+
+    String minSt = "23";
+
+    String minTs = "-12";
 
     @Override
     public List<Item> getItems() throws IOException, InterruptedException, JSONException {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-                .POST(HttpRequest.BodyPublishers.ofString(bodyTS))
+                .POST(HttpRequest.BodyPublishers.ofString(String.format(bodyTS, minTs)))
                 .header("Cookie", cookies)
                 .header("Accept", "application/json, text/plain, */*")
                 .header("Content-Type", "application/json")
@@ -77,7 +85,7 @@ public class WTradeServiceImpl implements WTradeService {
 
         client = HttpClient.newHttpClient();
         request = HttpRequest.newBuilder()
-                .POST(HttpRequest.BodyPublishers.ofString(bodyST))
+                .POST(HttpRequest.BodyPublishers.ofString(String.format(bodyST, minSt)))
                 .header("Cookie", cookies)
                 .header("Accept", "application/json, text/plain, */*")
                 .header("Content-Type", "application/json")
@@ -100,10 +108,16 @@ public class WTradeServiceImpl implements WTradeService {
         }
 
         return newItems;
+
+        //TODO вынести отправку запросов в отдельную функцию
     }
 
-    public void setCookies(String userCookies) {
-        cookies = userCookies;
+    public void setMinTs(String min) {
+        minTs = min;
+    }
+
+    public void setMinSt(String min) {
+        minSt = min;
     }
 
 

@@ -21,15 +21,7 @@ import org.json.*;
 @Service
 public class WTradeServiceImpl implements WTradeService {
 
-    String cookies = "theme=main; " +
-
-            "session=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImN0eSI6IkpXVCJ9.eyJpZCI6Ijc2NTYxMTk4MTM1M" +
-            "Dg3ODczIiwibmJmIjoxNjkyMjU5OTU5LCJleHAiOjE2OTQ4NTE5NTksImlhdCI6MTY5MjI1OTk1OX0.RMlLaP8ppTnq0FzZ7reX_NAVRi3So" +
-            "4NaXdFrUVvUNpi6MRMjsulTRk_2Nxl_-xE7qPn0m2snzkpXWmWiV4bndJJeOUMpUc1CPm6a_4a0W3T5T0wXhD0ftw0FCEFwlqVUbW1Hvj__H" +
-            "M52N6yA4rVgDHs95E2S1sOZ22Ytck8jGCmmK-Yjzmpo8FbphhnOlXPBixXrbSIZScHYv8BE1iXejCoxkMPxLyHd6dGSBEGzlHuf4ee_OR-u" +
-            "AS2WEm8EKIE1PjZKAEv9fYinMv7EOo8PafIhl05RPWBKL8B8nT8Znr_kd2xyMv55cEpZujfi1tcV2awLM6X2fvIRrMqlrd_rOw; " +
-
-            "steamid=76561198135087873";
+    String cookies = "";
 
     String bodyTS = """
             {\"filter\":{\"appId\":252490,\"order\":0,\"minSales\":0,\"service1\":6,\"service2\":22,\"countMin1\":1," +
@@ -47,17 +39,32 @@ public class WTradeServiceImpl implements WTradeService {
             "\"fee2\":{\"fee\":9.91,\"bonus\":0},\"currency\":\"USD\"}
             """;
 
-    Set<Long> ids = new HashSet<>();
+
 
     String minSt = "23";
 
     String minTs = "-12";
 
+    public String getMinSt() {
+        return minSt;
+    }
+
+    public String getMinTs() {
+        return minTs;
+    }
+
     @Override
-    public List<Item> getItems() throws IOException, InterruptedException, JSONException {
+    public List<Item> getItems(List<Item> newItems, Set<Long> ids) throws IOException, InterruptedException, JSONException {
+        getNewItems(newItems, ids, bodyTS, minTs, "Tradeit", "SkinSwap");
+        getNewItems(newItems, ids, bodyST, minSt, "SkinSwap", "Tradeit");
+
+        return newItems;
+    }
+
+    public void getNewItems(List<Item> newItems, Set<Long> ids, String body, String min, String firstService, String secondService) throws IOException, InterruptedException, JSONException {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-                .POST(HttpRequest.BodyPublishers.ofString(String.format(bodyTS, minTs)))
+                .POST(HttpRequest.BodyPublishers.ofString(String.format(body, min)))
                 .header("Cookie", cookies)
                 .header("Accept", "application/json, text/plain, */*")
                 .header("Content-Type", "application/json")
@@ -71,45 +78,14 @@ public class WTradeServiceImpl implements WTradeService {
 
         ObjectMapper mapper = new ObjectMapper();
         List<Item> items = mapper.readValue(array.toString(), new TypeReference<List<Item>>() {});
-        List<Item> newItems = new ArrayList<>();
         for(Item i: items) {
             if(!ids.contains(i.getId())) {
                 ids.add(i.getId());
-                i.setFirstService("Tradeit");
-                i.setSecondService("SkinSwap");
+                i.setFirstService(firstService);
+                i.setSecondService(secondService);
                 newItems.add(i);
             }
         }
-
-
-
-        client = HttpClient.newHttpClient();
-        request = HttpRequest.newBuilder()
-                .POST(HttpRequest.BodyPublishers.ofString(String.format(bodyST, minSt)))
-                .header("Cookie", cookies)
-                .header("Accept", "application/json, text/plain, */*")
-                .header("Content-Type", "application/json")
-                .uri(URI.create("https://tablevv.com/api/table/items-chunk?page=1"))
-                .build();
-        response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-
-        object = new JSONObject(response.body());
-        array = object.getJSONArray("items");
-
-        items = mapper.readValue(array.toString(), new TypeReference<List<Item>>() {});
-        for(Item i: items) {
-            if(!ids.contains(i.getId())) {
-                ids.add(i.getId());
-                i.setFirstService("SkinSwap");
-                i.setSecondService("Tradeit");
-                newItems.add(i);
-            }
-        }
-
-        return newItems;
-
-        //TODO вынести отправку запросов в отдельную функцию
     }
 
     public void setMinTs(String min) {
@@ -118,6 +94,10 @@ public class WTradeServiceImpl implements WTradeService {
 
     public void setMinSt(String min) {
         minSt = min;
+    }
+
+    public void setCookies(String userCookies) {
+        cookies = userCookies;
     }
 
 

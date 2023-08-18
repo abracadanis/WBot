@@ -14,7 +14,10 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
 @Component
@@ -27,11 +30,16 @@ public class WTradeBot extends TelegramLongPollingBot {
     private static final String PARSE = "/parse";
     private static final String CHANGE_MIN_TS = "/mints";
     private static final String CHANGE_MIN_ST = "/minst";
+    private static final String COOKIES = "/cookies";
+    private static final String INFO = "/info";
 
 
     private Boolean isStarted = false;
-    private Boolean isChangingMinSt = false;
-    private Boolean isChangingMinTs = false;
+    private Boolean setMinSt = false;
+    private Boolean setMinTs = false;
+    private Boolean setCookies = false;
+    private List<Item> newItems = new ArrayList<>();
+    Set<Long> ids = new HashSet<>();
 
     @Autowired
     private WTradeServiceImpl service;
@@ -54,10 +62,13 @@ public class WTradeBot extends TelegramLongPollingBot {
                 startCommand(chatId, username);
             }
             case PARSE -> {
+                sendMessage(chatId, "Погнали");
+                LOG.debug("BOT START");
+
                 isStarted = true;
                 while(isStarted) {
                     try {
-                        List<Item> items = service.getItems();
+                        List<Item> items = service.getItems(newItems, ids);
                         for(Item i: items) {
                             String newItemMessage = """
                                 NEW ITEM (%s -> %s): %s, %s
@@ -65,39 +76,63 @@ public class WTradeBot extends TelegramLongPollingBot {
                             sendMessage(chatId, String.format(newItemMessage, i.getFirstService(), i.getSecondService(), i.getName(), i.getProfit()));
                         }
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        LOG.debug("ИОЭксепшн (что это ?) {} \n {}", e.getMessage(), e.getStackTrace());
+                        sendMessage(chatId, "ИОЭксепшн (что это ?)");
                     } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
+                        LOG.debug("Ошибка при отправке запроса. {} \n {}", e.getMessage(), e.getStackTrace());
+                        sendMessage(chatId, "Ошибка при отправке запроса");
                     } catch (JSONException e) {
-                        throw new RuntimeException(e);
+                        LOG.debug("Ошибка при получении JSON. {} \n {}", e.getMessage(), e.getStackTrace());
+                        sendMessage(chatId, "Ошибка при получении JSON");
                     }
                 }
             }
             case STOP -> {
                 isStarted = false;
+                sendMessage(chatId, "Бот остановлен");
+                LOG.debug("BOT STOP");
+            }
+            case COOKIES -> {
+                LOG.debug("SET COOKIES");
+                sendMessage(chatId, "Пиши");
+                setCookies = true;
+                setMinTs = false;
+                setMinSt = false;
             }
             case CHANGE_MIN_ST -> {
+                LOG.debug("BOT CHANGE MIN ST");
                 if(isStarted) {
                     sendMessage(chatId, "Сначала останови бота (/stop)");
                 }
-                isChangingMinSt = true;
-                isChangingMinTs = false;
+                sendMessage(chatId, "Пиши");
+                setMinSt = true;
+                setMinTs = false;
             }
             case CHANGE_MIN_TS -> {
+                LOG.debug("BOT CHANGE MIN TS");
                 if(isStarted) {
                     sendMessage(chatId, "Сначала останови бота (/stop)");
                 }
-                isChangingMinTs = true;
-                isChangingMinSt = false;
+                sendMessage(chatId, "Пиши");
+                setMinTs = true;
+                setMinSt = false;
+            }
+            case INFO -> {
+                LOG.debug("SEND INFO");
+                sendInfo(chatId);
             }
             default -> {
-                if(isChangingMinTs) {
+                if(setMinTs) {
+                    LOG.debug("MIN TS = {}", update.getMessage().getText());
                     service.setMinTs(update.getMessage().getText());
-                } else if (isChangingMinSt) {
+                } else if (setMinSt) {
+                    LOG.debug("MIN ST = {}", update.getMessage().getText());
                     service.setMinSt(update.getMessage().getText());
+                } else if(setCookies) {
+                    service.setCookies(update.getMessage().getText());
                 }
-                isChangingMinSt = false;
-                isChangingMinTs = false;
+                setMinSt = false;
+                setMinTs = false;
             }
         }
     }
@@ -121,14 +156,53 @@ public class WTradeBot extends TelegramLongPollingBot {
         var text = """
                Короче, %s, я тебе парсер сделал и в благородство играть не буду: выполнишь для меня пару заданий — и мы в расчете.
                Заодно посмотрим, как быстро у тебя башка после плотной хапочки прояснится. А по твоей теме постараюсь разузнать.
-               Хрен его знает, на кой ляд тебе этот парсинг сдался, но я в чужие дела не лезу, хочешь спарсить, значит есть за чем...
+               Хрен его знает, на кой ляд тебе этот парсинг сдался, но я в чужие дела не лезу, хочешь спарсить, значит есть за чем...\n
                
                Запуск - /parse
                Остановка - /stop
+               
+               Изменение кукисов - /cookies
                Изменения минимума (Tradeit -> SkinSwap) - /mints
                Изменения минимума (SkinSwap -> Tradeit) - /minst
+               Дефолтный минимум (Tradeit -> SkinSwap) = -12
+               Дефолтный минимум (SkinSwap -> Tradeit) = 23
+
+               Состояние бота и актуально заданные проценты - /info
                """;
         var formattedText = String.format(text, username);
         sendMessage(chatId, formattedText);
+    }
+
+    private void sendInfo(Long chatId) {
+        String info;
+        if (isStarted) {
+            info = """
+               Бот запущен
+               Минимум (Tradeit -> SkinSwap) = %s
+               Минимум (SkinSwap -> Tradeit) = %s
+                
+               Запуск - /parse
+               Остановка - /stop
+               
+               Изменение кукисов - /cookies
+               Изменения минимума (Tradeit -> SkinSwap) - /mints
+               Изменения минимума (SkinSwap -> Tradeit) - /minst
+                """;
+        } else {
+            info = """
+               Бот остановлен
+               Минимум (Tradeit -> SkinSwap) = %s
+               Минимум (SkinSwap -> Tradeit) = %s
+                
+               Запуск - /parse
+               Остановка - /stop
+               
+               Изменение кукисов - /cookies
+               Изменения минимума (Tradeit -> SkinSwap) - /mints
+               Изменения минимума (SkinSwap -> Tradeit) - /minst
+                """;
+        }
+
+        sendMessage(chatId, String.format(info, service.getMinTs(), service.getMinSt()));
     }
 }

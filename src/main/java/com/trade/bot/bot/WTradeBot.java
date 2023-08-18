@@ -78,12 +78,15 @@ public class WTradeBot extends TelegramLongPollingBot {
                     } catch (IOException e) {
                         LOG.debug("ИОЭксепшн (что это ?) {} \n {}", e.getMessage(), e.getStackTrace());
                         sendMessage(chatId, "ИОЭксепшн (что это ?)");
+                        isStarted = false;
                     } catch (InterruptedException e) {
                         LOG.debug("Ошибка при отправке запроса. {} \n {}", e.getMessage(), e.getStackTrace());
                         sendMessage(chatId, "Ошибка при отправке запроса");
+                        isStarted = false;
                     } catch (JSONException e) {
                         LOG.debug("Ошибка при получении JSON. {} \n {}", e.getMessage(), e.getStackTrace());
                         sendMessage(chatId, "Ошибка при получении JSON");
+                        isStarted = false;
                     }
                 }
             }

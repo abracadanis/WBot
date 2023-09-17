@@ -9,6 +9,6 @@ import java.util.List;
 import java.util.Set;
 
 public interface WTradeService {
-    List<Item> getItems(List<Item> newItems, Set<Long> ids) throws SerialException, IOException, InterruptedException, JSONException;
+    List<Item> getItems() throws SerialException, IOException, InterruptedException, JSONException;
 
 }

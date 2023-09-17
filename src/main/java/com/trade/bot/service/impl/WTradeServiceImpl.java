@@ -11,94 +11,64 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.text.MessageFormat;
+import java.util.*;
 
 import org.json.*;
 
 @Service
 public class WTradeServiceImpl implements WTradeService {
 
-    String cookies = "";
+    Map<Long, Float> id_price = new HashMap<>();
 
-    String bodyTS = """
-            {\"filter\":{\"appId\":252490,\"order\":0,\"minSales\":0,\"service1\":6,\"service2\":22,\"countMin1\":1," +
-            "\"countMin2\":0,\"direction\":0,\"priceMax1\":0,\"priceMax2\":0,\"priceMin1\":0,\"priceMin2\":0,\"profitMax\":0," +
-            "\"profitMin\":%s,\"priceType1\":0,\"priceType2\":0,\"salesPeriod\":0,\"salesService\":0,\"searchName\":\"\"," +
-            "\"types\":{\"1\":1,\"2\":0,\"39\":0,\"40\":0,\"41\":0,\"42\":0}},\"fee1\":{\"fee\":10,\"bonus\":3}," +
-            "\"fee2\":{\"fee\":9.91,\"bonus\":0},\"currency\":\"USD\"}
-            """;
+    List<Item> newItems = new ArrayList<>();
 
-    String bodyST = """
-            {\"filter\":{\"appId\":252490,\"order\":0,\"minSales\":0,\"service1\":22,\"service2\":6,\"countMin1\":1," +
-            "\"countMin2\":0,\"direction\":0,\"priceMax1\":0,\"priceMax2\":0,\"priceMin1\":0,\"priceMin2\":0,\"profitMax\":0," +
-            "\"profitMin\":%s,\"priceType1\":0,\"priceType2\":0,\"salesPeriod\":0,\"salesService\":0,\"searchName\":\"\"," +
-            "\"types\":{\"1\":1,\"2\":0,\"39\":0,\"40\":0,\"41\":0,\"42\":0}},\"fee1\":{\"fee\":10,\"bonus\":3}," +
-            "\"fee2\":{\"fee\":9.91,\"bonus\":0},\"currency\":\"USD\"}
-            """;
+    HttpClient client = HttpClient.newHttpClient();
 
+    String uri = "https://cs.money/5.0/load_bots_inventory/730?hasTradeLock=true&isMarket=true&limit=60&offset={0}&priceWithBonus=30&sort=botFirst&stickerCollection=EMS%20Katowice%202014&stickerCollection=DreamHack%202014&stickerCollection=ESL%20One%20Cologne%202014&stickerCollection=ESL%20One%20Katowice%202015&tradeLockDays=1&tradeLockDays=2&tradeLockDays=3&tradeLockDays=4&tradeLockDays=5&tradeLockDays=6&tradeLockDays=7&tradeLockDays=0&withStack=true";
 
-
-    String minSt = "23";
-
-    String minTs = "-12";
-
-    public String getMinSt() {
-        return minSt;
-    }
-
-    public String getMinTs() {
-        return minTs;
-    }
+    int offset = 0;
 
     @Override
-    public List<Item> getItems(List<Item> newItems, Set<Long> ids) throws IOException, InterruptedException, JSONException {
-        getNewItems(newItems, ids, bodyTS, minTs, "Tradeit", "SkinSwap");
-        getNewItems(newItems, ids, bodyST, minSt, "SkinSwap", "Tradeit");
+    public List<Item> getItems() throws IOException, InterruptedException, JSONException {
+        newItems.clear();
+        getNewItems();
 
         return newItems;
     }
 
-    public void getNewItems(List<Item> newItems, Set<Long> ids, String body, String min, String firstService, String secondService) throws IOException, InterruptedException, JSONException {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .POST(HttpRequest.BodyPublishers.ofString(String.format(body, min)))
-                .header("Cookie", cookies)
-                .header("Accept", "application/json, text/plain, */*")
-                .header("Content-Type", "application/json")
-                .uri(URI.create("https://tablevv.com/api/table/items-chunk?page=1"))
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+    public void getNewItems() throws IOException, InterruptedException, JSONException {
+        List<Item> items;
+        do {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .GET()
+                    .header("Accept", "application/json, text/plain, */*")
+                    .header("Content-Type", "application/json")
+                    .uri(URI.create(MessageFormat.format(uri, offset)))
+                    .build();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
+            System.out.println(request);
+            System.out.println(response.body());
 
-        JSONObject object = new JSONObject(response.body());
-        JSONArray array = object.getJSONArray("items");
+            JSONObject object = new JSONObject(response.body());
+            JSONArray array = object.getJSONArray("items");
 
-        ObjectMapper mapper = new ObjectMapper();
-        List<Item> items = mapper.readValue(array.toString(), new TypeReference<List<Item>>() {});
-        for(Item i: items) {
-            if(!ids.contains(i.getId())) {
-                ids.add(i.getId());
-                i.setFirstService(firstService);
-                i.setSecondService(secondService);
-                newItems.add(i);
+            ObjectMapper mapper = new ObjectMapper();
+            items = mapper.readValue(array.toString(), new TypeReference<List<Item>>() {});
+            for(Item i: items) {
+                if(!id_price.containsKey(i.getId())) {
+                    id_price.put(i.getId(), i.getPrice());
+                    newItems.add(i);
+                } else if(id_price.containsKey(i.getId()) && id_price.get(i.getId()) > i.getPrice()) {
+                    id_price.replace(i.getId(), i.getPrice());
+                    newItems.add(i);
+                }
             }
-        }
+
+            offset += 60;
+        } while (items.size() == 60);
+        offset = 0;
+        items.clear();
     }
-
-    public void setMinTs(String min) {
-        minTs = min;
-    }
-
-    public void setMinSt(String min) {
-        minSt = min;
-    }
-
-    public void setCookies(String userCookies) {
-        cookies = userCookies;
-    }
-
-
 }

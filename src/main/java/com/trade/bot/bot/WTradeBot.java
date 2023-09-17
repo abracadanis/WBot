@@ -28,18 +28,10 @@ public class WTradeBot extends TelegramLongPollingBot {
     private static final String START = "/start";
     private static final String STOP = "/stop";
     private static final String PARSE = "/parse";
-    private static final String CHANGE_MIN_TS = "/mints";
-    private static final String CHANGE_MIN_ST = "/minst";
-    private static final String COOKIES = "/cookies";
     private static final String INFO = "/info";
 
 
     private Boolean isStarted = false;
-    private Boolean setMinSt = false;
-    private Boolean setMinTs = false;
-    private Boolean setCookies = false;
-    private List<Item> newItems = new ArrayList<>();
-    Set<Long> ids = new HashSet<>();
 
     @Autowired
     private WTradeServiceImpl service;
@@ -68,12 +60,14 @@ public class WTradeBot extends TelegramLongPollingBot {
                 isStarted = true;
                 while(isStarted) {
                     try {
-                        List<Item> items = service.getItems(newItems, ids);
+                        List<Item> items = service.getItems();
                         for(Item i: items) {
                             String newItemMessage = """
-                                NEW ITEM (%s -> %s): %s, %s
-                                """;
-                            sendMessage(chatId, String.format(newItemMessage, i.getFirstService(), i.getSecondService(), i.getName(), i.getProfit()));
+                            NEW ITEM : %s
+                            PRICE: %s $
+                            LINK: https://cs.money/csgo/%s/%d/
+                            """;
+                            sendMessage(chatId, String.format(newItemMessage, i.getName(), i.getPrice()));
                         }
                     } catch (IOException e) {
                         LOG.debug("ИОЭксепшн (что это ?) {} \n {}", e.getMessage(), e.getStackTrace());
@@ -95,47 +89,12 @@ public class WTradeBot extends TelegramLongPollingBot {
                 sendMessage(chatId, "Бот остановлен");
                 LOG.debug("BOT STOP");
             }
-            case COOKIES -> {
-                LOG.debug("SET COOKIES");
-                sendMessage(chatId, "Пиши");
-                setCookies = true;
-                setMinTs = false;
-                setMinSt = false;
-            }
-            case CHANGE_MIN_ST -> {
-                LOG.debug("BOT CHANGE MIN ST");
-                if(isStarted) {
-                    sendMessage(chatId, "Сначала останови бота (/stop)");
-                }
-                sendMessage(chatId, "Пиши");
-                setMinSt = true;
-                setMinTs = false;
-            }
-            case CHANGE_MIN_TS -> {
-                LOG.debug("BOT CHANGE MIN TS");
-                if(isStarted) {
-                    sendMessage(chatId, "Сначала останови бота (/stop)");
-                }
-                sendMessage(chatId, "Пиши");
-                setMinTs = true;
-                setMinSt = false;
-            }
             case INFO -> {
                 LOG.debug("SEND INFO");
                 sendInfo(chatId);
             }
             default -> {
-                if(setMinTs) {
-                    LOG.debug("MIN TS = {}", update.getMessage().getText());
-                    service.setMinTs(update.getMessage().getText());
-                } else if (setMinSt) {
-                    LOG.debug("MIN ST = {}", update.getMessage().getText());
-                    service.setMinSt(update.getMessage().getText());
-                } else if(setCookies) {
-                    service.setCookies(update.getMessage().getText());
-                }
-                setMinSt = false;
-                setMinTs = false;
+
             }
         }
     }
@@ -181,31 +140,19 @@ public class WTradeBot extends TelegramLongPollingBot {
         if (isStarted) {
             info = """
                Бот запущен
-               Минимум (Tradeit -> SkinSwap) = %s
-               Минимум (SkinSwap -> Tradeit) = %s
                 
                Запуск - /parse
                Остановка - /stop
-               
-               Изменение кукисов - /cookies
-               Изменения минимума (Tradeit -> SkinSwap) - /mints
-               Изменения минимума (SkinSwap -> Tradeit) - /minst
                 """;
         } else {
             info = """
                Бот остановлен
-               Минимум (Tradeit -> SkinSwap) = %s
-               Минимум (SkinSwap -> Tradeit) = %s
-                
+              
                Запуск - /parse
                Остановка - /stop
-               
-               Изменение кукисов - /cookies
-               Изменения минимума (Tradeit -> SkinSwap) - /mints
-               Изменения минимума (SkinSwap -> Tradeit) - /minst
                 """;
         }
 
-        sendMessage(chatId, String.format(info, service.getMinTs(), service.getMinSt()));
+        sendMessage(chatId, info);
     }
 }

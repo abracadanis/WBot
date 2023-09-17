@@ -5,16 +5,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Item {
-    @JsonProperty("i")
+    @JsonProperty("id")
     private Long id;
-    @JsonProperty("n")
+    @JsonProperty("fullName")
     private String name;
-    @JsonProperty("p")
-    private Float profit;
-
-    private String firstService;
-
-    private String secondService;
+    @JsonProperty("price")
+    private Float price;
+    @JsonProperty("fullSlug")
+    private String fullSlug;
 
     public Long getId() {
         return id;
@@ -32,36 +30,19 @@ public class Item {
         this.name = name;
     }
 
-    public Float getProfit() {
-        return profit;
+    public Float getPrice() {
+        return price;
     }
 
-    public void setProfit(Float profit) {
-        this.profit = profit;
+    public void setPrice(Float price) {
+        this.price = price;
     }
 
-    public String getFirstService() {
-        return firstService;
+    public String getFullSlug() {
+        return fullSlug;
     }
 
-    public void setFirstService(String firstService) {
-        this.firstService = firstService;
-    }
-
-    public String getSecondService() {
-        return secondService;
-    }
-
-    public void setSecondService(String secondService) {
-        this.secondService = secondService;
-    }
-
-    @Override
-    public String toString() {
-        return "Item{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", profit=" + profit +
-                '}';
+    public void setFullSlug(String fullSlug) {
+        this.fullSlug = fullSlug;
     }
 }

@@ -2,8 +2,10 @@ package com.trade.bot.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.trade.bot.config.RandomUserAgent;
 import com.trade.bot.service.WTradeService;
 import com.trade.bot.service.obj.Item;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -44,6 +46,7 @@ public class WTradeServiceImpl implements WTradeService {
                     .GET()
                     .header("Accept", "application/json, text/plain, */*")
                     .header("Content-Type", "application/json")
+                    .header("User-Agent", RandomUserAgent.getRandomUserAgent())
                     .uri(URI.create(MessageFormat.format(uri, offset)))
                     .build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());

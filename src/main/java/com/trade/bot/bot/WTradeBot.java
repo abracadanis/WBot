@@ -14,6 +14,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -69,6 +70,12 @@ public class WTradeBot extends TelegramLongPollingBot {
                     } catch (IOException e) {
                         LOG.debug("ИОЭксепшн (что это ?) {} \n {}", e.getMessage(), e.getStackTrace());
                         sendMessage(chatId, "ИОЭксепшн (что это ?)");
+                        sendMessage(chatId, "Message:");
+                        sendMessage(chatId, e.getMessage());
+                        sendMessage(chatId, "Localized Message:");
+                        sendMessage(chatId, e.getLocalizedMessage());
+                        sendMessage(chatId, "StackTrace:");
+                        sendMessage(chatId, Arrays.toString(e.getStackTrace()));
                         isStarted = false;
                     } catch (InterruptedException e) {
                         LOG.debug("Ошибка при отправке запроса. {} \n {}", e.getMessage(), e.getStackTrace());

@@ -14,10 +14,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 
 @Component
@@ -67,7 +64,7 @@ public class WTradeBot extends TelegramLongPollingBot {
                             PRICE: %s $
                             LINK: https://cs.money/csgo/%s/%d/
                             """;
-                            sendMessage(chatId, String.format(newItemMessage, i.getName(), i.getPrice()));
+                            sendMessage(chatId, String.format(newItemMessage, i.getName(), i.getPrice(), i.getFullSlug(), i.getAssetId()));
                         }
                     } catch (IOException e) {
                         LOG.debug("ИОЭксепшн (что это ?) {} \n {}", e.getMessage(), e.getStackTrace());

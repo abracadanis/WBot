@@ -13,6 +13,8 @@ public class Item {
     private Float price;
     @JsonProperty("fullSlug")
     private String fullSlug;
+    @JsonProperty("assetId")
+    private Long assetId;
 
     public Long getId() {
         return id;
@@ -44,5 +46,13 @@ public class Item {
 
     public void setFullSlug(String fullSlug) {
         this.fullSlug = fullSlug;
+    }
+
+    public Long getAssetId() {
+        return assetId;
+    }
+
+    public void setAssetId(Long assetId) {
+        this.assetId = assetId;
     }
 }

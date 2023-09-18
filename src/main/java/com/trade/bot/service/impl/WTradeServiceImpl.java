@@ -70,6 +70,7 @@ public class WTradeServiceImpl implements WTradeService {
             }
 
             offset += 60;
+            Thread.sleep(6000);
         } while (items.size() == 60);
         offset = 0;
         items.clear();

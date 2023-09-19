@@ -9,7 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.net.URI;
+import java.io.InputStream;
+import java.net.*;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -40,39 +41,71 @@ public class WTradeServiceImpl implements WTradeService {
     }
 
     public void getNewItems() throws IOException, InterruptedException, JSONException {
-        List<Item> items;
+        List<Item> items = null;
         do {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .GET()
-                    .header("Accept", "application/json, text/plain, */*")
-                    .header("Content-Type", "application/json")
-                    .header("User-Agent", RandomUserAgent.getRandomUserAgent())
-                    .uri(URI.create(MessageFormat.format(uri, offset)))
-                    .build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("133.242.229.79", 33333));
+            HttpURLConnection connection = (HttpURLConnection) new URL(uri).openConnection(proxy);
 
-            System.out.println(request);
-            System.out.println(response.body());
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Accept", "application/json, text/plain, */*");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("User-Agent", RandomUserAgent.getRandomUserAgent());
 
-            JSONObject object = new JSONObject(response.body());
-            JSONArray array = object.getJSONArray("items");
+            int responseCode = connection.getResponseCode();
 
-            ObjectMapper mapper = new ObjectMapper();
-            items = mapper.readValue(array.toString(), new TypeReference<List<Item>>() {});
-            for(Item i: items) {
-                if(!id_price.containsKey(i.getId())) {
-                    id_price.put(i.getId(), i.getPrice());
-                    newItems.add(i);
-                } else if(id_price.containsKey(i.getId()) && id_price.get(i.getId()) > i.getPrice()) {
-                    id_price.replace(i.getId(), i.getPrice());
-                    newItems.add(i);
-                }
+            // Если запрос был успешным, получить ответ
+            if (responseCode == 200) {
+                InputStream inputStream = connection.getInputStream();
+
+                // Преобразовать ответ в JSON
+                String json = new Scanner(inputStream).useDelimiter("\\A").next();
+
+                // Вывести JSON на экран
+                System.out.println(json);
+
+                ObjectMapper mapper = new ObjectMapper();
+                items = mapper.readValue(json, new TypeReference<List<Item>>() {});
+            } else {
+                // Обработать ошибку
+                System.out.println("Ошибка: " + responseCode);
+                break;
             }
-
-            offset += 60;
-            Thread.sleep(6000);
+//
+//            HttpRequest request = HttpRequest.newBuilder()
+//                    .GET()
+//                    .header("Accept", "application/json, text/plain, */*")
+//                    .header("Content-Type", "application/json")
+//                    .header("User-Agent", "Mozilla/5.0 (compatible; MSIE 7.0; Windows NT 6.0; en-US)")
+//                    .header("Cookie", "support_token=d20956a485adb7e78c92fe3af673a04d28dc5228fdee57556e3fd9097f7485fb")
+//                    .uri(URI.create(MessageFormat.format(uri, offset)))
+//                    .build();
+//            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+//
+//            System.out.println(request);
+//            System.out.println(response.body());
+//
+//            JSONObject object = new JSONObject(response.body());
+//            JSONArray array = object.getJSONArray("items");
+//
+//            ObjectMapper mapper = new ObjectMapper();
+//            items = mapper.readValue(array.toString(), new TypeReference<List<Item>>() {});
+//            for(Item i: items) {
+//                if(!id_price.containsKey(i.getId())) {
+//                    id_price.put(i.getId(), i.getPrice());
+//                    newItems.add(i);
+//                } else if(id_price.containsKey(i.getId()) && id_price.get(i.getId()) > i.getPrice()) {
+//                    id_price.replace(i.getId(), i.getPrice());
+//                    newItems.add(i);
+//                }
+//            }
+//
+//            offset += 60;
+//            Thread.sleep(15000);
         } while (items.size() == 60);
+        if(items != null) {
+            items.clear();
+        }
+
         offset = 0;
-        items.clear();
     }
 }

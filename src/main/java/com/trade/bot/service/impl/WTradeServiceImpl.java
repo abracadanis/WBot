@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trade.bot.config.RandomUserAgent;
 import com.trade.bot.service.WTradeService;
 import com.trade.bot.service.obj.Item;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -46,7 +45,8 @@ public class WTradeServiceImpl implements WTradeService {
                     .GET()
                     .header("Accept", "application/json, text/plain, */*")
                     .header("Content-Type", "application/json")
-                    .header("User-Agent", RandomUserAgent.getRandomUserAgent())
+                    .header("User-Agent", "Mozilla/5.0 (Windows; U; MSIE 9.0; WIndows NT 9.0; en-US))")
+//                    .header("Cookie", "support_token=d20956a485adb7e78c92fe3af673a04d28dc5228fdee57556e3fd9097f7485fb")
                     .uri(URI.create(MessageFormat.format(uri, offset)))
                     .build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());

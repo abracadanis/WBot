@@ -126,14 +126,8 @@ public class WTradeBot extends TelegramLongPollingBot {
                
                Запуск - /parse
                Остановка - /stop
-               
-               Изменение кукисов - /cookies
-               Изменения минимума (Tradeit -> SkinSwap) - /mints
-               Изменения минимума (SkinSwap -> Tradeit) - /minst
-               Дефолтный минимум (Tradeit -> SkinSwap) = -12
-               Дефолтный минимум (SkinSwap -> Tradeit) = 23
 
-               Состояние бота и актуально заданные проценты - /info
+               Состояние бота - /info
                """;
         var formattedText = String.format(text, username);
         sendMessage(chatId, formattedText);

@@ -2,6 +2,7 @@ package com.trade.bot.bot;
 
 import com.trade.bot.service.impl.WTradeServiceImpl;
 import com.trade.bot.service.obj.Item;
+import com.trade.bot.service.obj.Sticker;
 import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,12 +61,24 @@ public class WTradeBot extends TelegramLongPollingBot {
                     try {
                         List<Item> items = service.getItems();
                         for(Item i: items) {
-                            String newItemMessage = """
-                            NEW ITEM : %s
-                            PRICE: %s $
-                            LINK: https://cs.money/csgo/%s/%d/
-                            """;
-                            sendMessage(chatId, String.format(newItemMessage, i.getName(), i.getPrice(), i.getFullSlug(), i.getAssetId()));
+                            StringBuilder newItemMessage = new StringBuilder("""
+                                    NEW ITEM : %s
+                                    PRICE: %s $
+                                    LINK: https://cs.money/csgo/%s/%d/
+                                                                
+                                    """);;
+
+                            newItemMessage = new StringBuilder(String.format(newItemMessage.toString(), i.getName(), i.getPrice(), i.getFullSlug(), i.getAssetId()));
+                            if(i.getStickers() != null) {
+                                newItemMessage.append("STICKERS: \n");
+                                for(Sticker sticker: i.getStickers()) {
+                                    if(sticker != null) {
+                                        newItemMessage.append("  ").append(sticker.getName()).append(" : position = ").append(sticker.getPosition()).append("\n");
+                                    }
+                                }
+                            }
+
+                            sendMessage(chatId, String.valueOf(newItemMessage));
                         }
                     } catch (IOException e) {
                         LOG.debug("ИОЭксепшн (что это ?) {} \n {}", e.getMessage(), e.getStackTrace());
@@ -85,6 +98,15 @@ public class WTradeBot extends TelegramLongPollingBot {
                         LOG.debug("Ошибка при получении JSON. {} \n {}", e.getMessage(), e.getStackTrace());
                         sendMessage(chatId, "Ошибка при получении JSON");
                         isStarted = false;
+                    } catch (Exception e) {
+                        LOG.debug("Че то ебнулось");
+                        sendMessage(chatId, "Че то ебнулось");
+                        sendMessage(chatId, "Message:");
+                        sendMessage(chatId, e.getMessage());
+                        sendMessage(chatId, "Localized Message:");
+                        sendMessage(chatId, e.getLocalizedMessage());
+                        sendMessage(chatId, "StackTrace:");
+                        sendMessage(chatId, Arrays.toString(e.getStackTrace()));
                     }
                 }
             }

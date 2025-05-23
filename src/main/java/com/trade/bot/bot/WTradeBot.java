@@ -76,15 +76,15 @@ public class WTradeBot extends TelegramLongPollingBot {
                             sendMessage(chatId, String.format(newItemMessage, i.getFirstService(), i.getSecondService(), i.getName(), i.getProfit()));
                         }
                     } catch (IOException e) {
-                        LOG.debug("ИОЭксепшн (что это ?) {} \n {}", e.getMessage(), e.getStackTrace());
-                        sendMessage(chatId, "ИОЭксепшн (что это ?)");
+                        LOG.debug("IOException. {} \n {}", e.getMessage(), e.getStackTrace());
+                        sendMessage(chatId, "ERROR");
                         isStarted = false;
                     } catch (InterruptedException e) {
-                        LOG.debug("Ошибка при отправке запроса. {} \n {}", e.getMessage(), e.getStackTrace());
+                        LOG.debug("InterruptedException. {} \n {}", e.getMessage(), e.getStackTrace());
                         sendMessage(chatId, "Ошибка при отправке запроса");
                         isStarted = false;
                     } catch (JSONException e) {
-                        LOG.debug("Ошибка при получении JSON. {} \n {}", e.getMessage(), e.getStackTrace());
+                        LOG.debug("JSONException. {} \n {}", e.getMessage(), e.getStackTrace());
                         sendMessage(chatId, "Ошибка при получении JSON");
                         isStarted = false;
                     }
@@ -158,7 +158,7 @@ public class WTradeBot extends TelegramLongPollingBot {
     private void startCommand(Long chatId, String username) {
         var text = """
                Короче, %s, я тебе парсер сделал и в благородство играть не буду: выполнишь для меня пару заданий — и мы в расчете.
-               Заодно посмотрим, как быстро у тебя башка после плотной хапочки прояснится. А по твоей теме постараюсь разузнать.
+               Заодно посмотрим, как быстро у тебя башка прояснится. А по твоей теме постараюсь разузнать.
                Хрен его знает, на кой ляд тебе этот парсинг сдался, но я в чужие дела не лезу, хочешь спарсить, значит есть за чем...\n
                
                Запуск - /parse
